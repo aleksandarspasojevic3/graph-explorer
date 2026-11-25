@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sok-block-visualizer"
+version = "0.1.0"
+description = "Visualizer plugin koji prikazuje cvor kao blok sa atributima."
+requires-python = ">=3.11"
+dependencies = ["sok-api==0.1.0"]
+
+[project.entry-points."sok.visualizer"]
+block = "sok.visualizer.block.plugin:BlockVisualizer"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sok*"]
+namespaces = true

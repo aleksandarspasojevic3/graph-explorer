@@ -1,0 +1,21 @@
+# Virtuelno okruzenje (svako pravi svoje)
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Django
+db.sqlite3
+
+# Lokalna kopija D3.js biblioteke
+graph_explorer/explorer/static/explorer/lib/
+
+# IDE
+.idea/
+.vscode/
