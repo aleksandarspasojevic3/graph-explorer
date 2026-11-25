@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sok-simple-visualizer"
+version = "0.1.0"
+description = "Visualizer plugin za jednostavan prikaz grafa."
+requires-python = ">=3.11"
+dependencies = ["sok-api==0.1.0"]
+
+[project.entry-points."sok.visualizer"]
+simple = "sok.visualizer.simple.plugin:SimpleVisualizer"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sok*"]
+namespaces = true

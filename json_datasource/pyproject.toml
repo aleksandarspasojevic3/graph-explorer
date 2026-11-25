@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sok-json-datasource"
+version = "0.1.0"
+description = "Data source plugin koji pravi graf iz JSON dokumenta."
+requires-python = ">=3.11"
+dependencies = ["sok-api==0.1.0"]
+
+[project.entry-points."sok.datasource"]
+json = "sok.datasource.json.plugin:JsonDataSource"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sok*"]
+namespaces = true
