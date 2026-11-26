@@ -265,19 +265,7 @@ class Graph:
 
         :rtype: bool
         """
-        if not self._nodes:
-            return True
-        adjacency = self._undirected_adjacency()
-        start = next(iter(self._nodes))
-        visited = {start}
-        queue = deque([start])
-        while queue:
-            current = queue.popleft()
-            for neighbor in adjacency[current]:
-                if neighbor not in visited:
-                    visited.add(neighbor)
-                    queue.append(neighbor)
-        return len(visited) == len(self._nodes)
+        return self._count_components() <= 1
 
     def has_cycle(self) -> bool:
         """
@@ -289,7 +277,9 @@ class Graph:
 
         :rtype: bool
         """
-        raise NotImplementedError
+        if self._directed:
+            return self._has_directed_cycle()
+        return len(self._edges) > len(self._nodes) - self._count_components()
 
     def _undirected_adjacency(self) -> Dict[str, Set[str]]:
         """Pomocna metoda: za svaki cvor vraca skup id-jeva suseda, pri cemu se smer grana zanemaruje"""
@@ -298,3 +288,41 @@ class Graph:
             adjacency[edge.source.id].add(edge.target.id)
             adjacency[edge.target.id].add(edge.source.id)
         return adjacency
+
+    def _count_components(self) -> int:
+        """Pomocna metoda: broj komponenti povezanosti grafa, pri cemu se smer grana zanemaruje"""
+        adjacency = self._undirected_adjacency()
+        visited: Set[str] = set()
+        components = 0
+        for start in self._nodes:
+            if start in visited:
+                continue
+            components += 1
+            visited.add(start)
+            queue = deque([start])
+            while queue:
+                current = queue.popleft()
+                for neighbor in adjacency[current]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append(neighbor)
+        return components
+
+    def _has_directed_cycle(self) -> bool:
+        """Pomocna metoda - provera ciklusa u usmerenom grafu (Kahn-ov algoritam)"""
+        in_degree: Dict[str, int] = {node_id: 0 for node_id in self._nodes}
+        successors: Dict[str, List[str]] = {node_id: [] for node_id in self._nodes}
+        for edge in self._edges.values():
+            in_degree[edge.target.id] += 1
+            successors[edge.source.id].append(edge.target.id)
+
+        queue = deque(node_id for node_id, degree in in_degree.items() if degree == 0)
+        removed = 0
+        while queue:
+            current = queue.popleft()
+            removed += 1
+            for successor in successors[current]:
+                in_degree[successor] -= 1
+                if in_degree[successor] == 0:
+                    queue.append(successor)
+        return removed < len(self._nodes)
