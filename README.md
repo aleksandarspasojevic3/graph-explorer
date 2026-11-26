@@ -60,3 +60,17 @@ python manage.py runserver
 ```
 
 Aplikacija je dostupna na http://127.0.0.1:8000.
+
+## Reinstalacija komponenti
+
+Skripta `reinstall.py` pravi virtuelno okruženje ako ne postoji, ponovo instalira sve komponente i pokreće server. Virtuelno okruženje ne mora biti aktivirano.
+
+```shell
+python reinstall.py
+```
+
+Samo reinstalacija, bez pokretanja servera:
+
+```shell
+python reinstall.py --no-server
+```
