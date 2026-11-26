@@ -24,4 +24,4 @@ class Node(GraphElement):
         :type attributes: Mapping[str, AttributeValue] | None
         :raises InvalidAttributeTypeError: ako neka vrednost nije dozvoljenog tipa
         """
-        raise NotImplementedError
+        super().__init__(node_id, attributes)
