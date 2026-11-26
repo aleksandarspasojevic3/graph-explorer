@@ -2,7 +2,7 @@
 
 import pytest
 
-from sok.api import NodeNotFoundError
+from sok.api import Edge, Node, NodeNotFoundError
 
 
 def ids(elements):
@@ -77,3 +77,22 @@ def test_subgraph_of_subgraph(people_graph):
 
     assert ids(result.nodes) == {"1", "2"}
     assert ids(result.edges) == {"10"}
+
+def test_loop_appears_once_and_node_is_its_own_neighbor(empty_graph):
+    a = Node("A")
+    empty_graph.add_node(a)
+    empty_graph.add_edge(Edge("1", a, a))
+
+    assert ids(empty_graph.edges_of("A")) == {"1"}
+    assert len(empty_graph.edges_of("A")) == 1
+    assert ids(empty_graph.neighbors("A")) == {"A"}
+
+
+def test_parallel_edges_give_neighbor_once(empty_graph):
+    a, b = Node("A"), Node("B")
+    empty_graph.add_node(a)
+    empty_graph.add_node(b)
+    empty_graph.add_edge(Edge("1", a, b))
+    empty_graph.add_edge(Edge("2", a, b))
+
+    assert len(empty_graph.neighbors("A")) == 1

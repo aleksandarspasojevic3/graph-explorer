@@ -62,3 +62,16 @@ def test_removing_edge_disconnects_graph(undirected_tree):
     undirected_tree.remove_edge("3")
 
     assert not undirected_tree.is_connected()
+
+def test_cycle_in_one_component_of_disconnected_graph():
+    graph = make_graph(True, [("A", "B"), ("C", "D"), ("D", "C")])
+
+    assert not graph.is_connected()
+    assert graph.has_cycle()
+
+
+def test_undirected_forest_has_no_cycle():
+    graph = make_graph(False, [("A", "B"), ("B", "C"), ("D", "E")])
+
+    assert not graph.is_connected()
+    assert not graph.has_cycle()
