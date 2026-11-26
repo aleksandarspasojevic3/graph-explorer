@@ -217,7 +217,14 @@ class Graph:
         :rtype: List[Node]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        neighbors: List[Node] = []
+        seen = set()
+        for edge in self.outgoing_edges(node_id):
+            other = edge.target if edge.source.id == node_id else edge.source
+            if other.id not in seen:
+                seen.add(other.id)
+                neighbors.append(other)
+        return neighbors
 
     # --- Ceo graf metode ---
 
@@ -234,7 +241,15 @@ class Graph:
         :return: novi graf
         :rtype: Graph
         """
-        raise NotImplementedError
+        ids = set(node_ids)
+        result = Graph(directed=self._directed)
+        for node in self._nodes.values():
+            if node.id in ids:
+                result.add_node(node)
+        for edge in self._edges.values():
+            if edge.source.id in ids and edge.target.id in ids:
+                result.add_edge(edge)
+        return result
 
     def clear(self) -> None:
         """Brise sve cvorove i grane iz grafa"""
