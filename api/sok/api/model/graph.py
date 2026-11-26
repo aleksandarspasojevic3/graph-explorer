@@ -1,6 +1,7 @@
 """Graf: skup cvorova i grana"""
 
-from typing import Dict, Iterable, List
+from collections import deque
+from typing import Dict, Iterable, List, Set
 
 from .edge import Edge
 from .exceptions import (
@@ -264,7 +265,19 @@ class Graph:
 
         :rtype: bool
         """
-        raise NotImplementedError
+        if not self._nodes:
+            return True
+        adjacency = self._undirected_adjacency()
+        start = next(iter(self._nodes))
+        visited = {start}
+        queue = deque([start])
+        while queue:
+            current = queue.popleft()
+            for neighbor in adjacency[current]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        return len(visited) == len(self._nodes)
 
     def has_cycle(self) -> bool:
         """
@@ -277,3 +290,11 @@ class Graph:
         :rtype: bool
         """
         raise NotImplementedError
+
+    def _undirected_adjacency(self) -> Dict[str, Set[str]]:
+        """Pomocna metoda: za svaki cvor vraca skup id-jeva suseda, pri cemu se smer grana zanemaruje"""
+        adjacency: Dict[str, Set[str]] = {node_id: set() for node_id in self._nodes}
+        for edge in self._edges.values():
+            adjacency[edge.source.id].add(edge.target.id)
+            adjacency[edge.target.id].add(edge.source.id)
+        return adjacency
