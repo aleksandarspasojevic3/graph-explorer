@@ -33,7 +33,9 @@ class Edge(GraphElement):
         :type attributes: Mapping[str, AttributeValue] | None
         :raises InvalidAttributeTypeError: ako neka vrednost nije dozvoljenog tipa
         """
-        raise NotImplementedError
+        super().__init__(edge_id, attributes)
+        self._source = source
+        self._target = target
 
     @property
     def source(self) -> Node:
@@ -41,7 +43,7 @@ class Edge(GraphElement):
         :return: cvor iz kog grana polazi
         :rtype: Node
         """
-        raise NotImplementedError
+        return self._source
 
     @property
     def target(self) -> Node:
@@ -49,4 +51,9 @@ class Edge(GraphElement):
         :return: cvor u koji grana ulazi
         :rtype: Node
         """
-        raise NotImplementedError
+        return self._target
+
+    def __repr__(self) -> str:
+        """Tekstualni prikaz grane, npr. Edge(id='1', '1' -> '2', attributes={})"""
+        return (f"Edge(id={self.id!r}, {self._source.id!r} -> {self._target.id!r}, "
+                f"attributes={dict(self.attributes)!r})")
