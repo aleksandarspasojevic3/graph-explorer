@@ -1,8 +1,14 @@
 """Graf: skup cvorova i grana"""
 
-from typing import Iterable, List
+from typing import Dict, Iterable, List
 
 from .edge import Edge
+from .exceptions import (
+    DuplicateEdgeError,
+    DuplicateNodeError,
+    EdgeNotFoundError,
+    NodeNotFoundError,
+)
 from .node import Node
 
 
@@ -27,7 +33,9 @@ class Graph:
         :param directed: True za usmeren graf, False za neusmeren
         :type directed: bool
         """
-        raise NotImplementedError
+        self._directed = directed
+        self._nodes: Dict[str, Node] = {}
+        self._edges: Dict[str, Edge] = {}
 
     @property
     def directed(self) -> bool:
@@ -35,7 +43,7 @@ class Graph:
         :return: True ako je graf usmeren
         :rtype: bool
         """
-        raise NotImplementedError
+        return self._directed
 
     @property
     def nodes(self) -> List[Node]:
@@ -43,7 +51,7 @@ class Graph:
         :return: svi cvorovi grafa (nova lista, izmena liste ne menja graf)
         :rtype: List[Node]
         """
-        raise NotImplementedError
+        return list(self._nodes.values())
 
     @property
     def edges(self) -> List[Edge]:
@@ -51,7 +59,7 @@ class Graph:
         :return: sve grane grafa (nova lista, izmena liste ne menja graf)
         :rtype: List[Edge]
         """
-        raise NotImplementedError
+        return list(self._edges.values())
 
     # --- Cvorovi ---
 
@@ -61,7 +69,9 @@ class Graph:
         :type node: Node
         :raises DuplicateNodeError: ako u grafu vec postoji cvor sa istim id-jem
         """
-        raise NotImplementedError
+        if node.id in self._nodes:
+            raise DuplicateNodeError(f"Cvor sa id-jem '{node.id}' vec postoji u grafu.")
+        self._nodes[node.id] = node
 
     def has_node(self, node_id: str) -> bool:
         """
@@ -70,7 +80,7 @@ class Graph:
         :return: True ako cvor postoji u grafu
         :rtype: bool
         """
-        raise NotImplementedError
+        return node_id in self._nodes
 
     def get_node(self, node_id: str) -> Node:
         """
@@ -80,7 +90,9 @@ class Graph:
         :rtype: Node
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        if node_id not in self._nodes:
+            raise NodeNotFoundError(f"Cvor sa id-jem '{node_id}' ne postoji u grafu.")
+        return self._nodes[node_id]
 
     def remove_node(self, node_id: str) -> None:
         """
@@ -98,37 +110,45 @@ class Graph:
 
     def add_edge(self, edge: Edge) -> None:
         """
-        :param edge: Grana koja se dodaje. Oba njena čvora moraju već biti u grafu
+        :param edge: grana koja se dodaje, oba njena cvora moraju vec biti u grafu
         :type edge: Edge
-        :raises DuplicateEdgeError: Ako u grafu već postoji grana sa istim id-jem
-        :raises NodeNotFoundError: Ako source ili target nije u grafu
+        :raises DuplicateEdgeError: ako u grafu vec postoji grana sa istim id-jem
+        :raises NodeNotFoundError: ako source ili target nije u grafu
         """
-        raise NotImplementedError
+        if edge.id in self._edges:
+            raise DuplicateEdgeError(f"Grana sa id-jem '{edge.id}' vec postoji u grafu.")
+        for endpoint in (edge.source, edge.target):
+            if not self.has_node(endpoint.id):
+                raise NodeNotFoundError(
+                    f"Grana '{edge.id}' povezuje cvor '{endpoint.id}' koji nije u grafu.")
+        self._edges[edge.id] = edge
 
     def has_edge(self, edge_id: str) -> bool:
         """
-        :param edge_id: Id grane
+        :param edge_id: id grane
         :type edge_id: str
         :return: True ako grana postoji u grafu
         :rtype: bool
         """
-        raise NotImplementedError
+        return edge_id in self._edges
 
     def get_edge(self, edge_id: str) -> Edge:
         """
-        :param edge_id: Id grane
+        :param edge_id: id grane
         :type edge_id: str
         :return: Grana sa tim id-jem
         :rtype: Edge
-        :raises EdgeNotFoundError: Ako grana ne postoji
+        :raises EdgeNotFoundError: ako grana ne postoji
         """
-        raise NotImplementedError
+        if edge_id not in self._edges:
+            raise EdgeNotFoundError(f"Grana sa id-jem '{edge_id}' ne postoji u grafu.")
+        return self._edges[edge_id]
 
     def remove_edge(self, edge_id: str) -> None:
         """
-        :param edge_id: Id grane koja se briše
+        :param edge_id: id grane koja se brise
         :type edge_id: str
-        :raises EdgeNotFoundError: Ako grana ne postoji
+        :raises EdgeNotFoundError: ako grana ne postoji
         """
         raise NotImplementedError
 
@@ -149,12 +169,12 @@ class Graph:
     def outgoing_edges(self, node_id: str) -> List[Edge]:
         """
         U usmerenom grafu vraca grane kojima je cvor source
-        U neusmerenom grafu vraca isto što i edges_of
+        U neusmerenom grafu vraca isto sto i edges_of
 
         :param node_id: id cvora
         :type node_id: str
         :rtype: List[Edge]
-        :raises NodeNotFoundError: Ako cvor ne postoji
+        :raises NodeNotFoundError: ako cvor ne postoji
         """
         raise NotImplementedError
 
