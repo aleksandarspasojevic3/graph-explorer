@@ -1,7 +1,10 @@
 """Zajednicka osnova za cvorove i grane - id i tipizirani atributi"""
 
 from datetime import date
-from typing import Mapping, Optional, Union
+from types import MappingProxyType
+from typing import Dict, Mapping, Optional, Union
+
+from .exceptions import AttributeNotFoundError
 
 AttributeValue = Union[int, float, str, date]
 """Dozvoljeni tipovi vrednosti atributa
@@ -27,7 +30,11 @@ class GraphElement:
         :type attributes: Mapping[str, AttributeValue] | None
         :raises InvalidAttributeTypeError: ako neka vrednost nije dozvoljenog tipa
         """
-        raise NotImplementedError
+        self._id = element_id
+        self._attributes: Dict[str, AttributeValue] = {}
+        if attributes is not None:
+            for name, value in attributes.items():
+                self.set_attribute(name, value)
 
     @property
     def id(self) -> str:
@@ -35,7 +42,7 @@ class GraphElement:
         :return: jedinstveni id elementa
         :rtype: str
         """
-        raise NotImplementedError
+        return self._id
 
     @property
     def attributes(self) -> Mapping[str, AttributeValue]:
@@ -46,7 +53,7 @@ class GraphElement:
         :return: atributi elementa (naziv -> vrednost)
         :rtype: Mapping[str, AttributeValue]
         """
-        raise NotImplementedError
+        return MappingProxyType(self._attributes)
 
     def has_attribute(self, name: str) -> bool:
         """
@@ -55,7 +62,7 @@ class GraphElement:
         :return: True ako element ima atribut sa tim nazivom
         :rtype: bool
         """
-        raise NotImplementedError
+        return name in self._attributes
 
     def get_attribute(self, name: str) -> AttributeValue:
         """
@@ -65,7 +72,9 @@ class GraphElement:
         :rtype: AttributeValue
         :raises AttributeNotFoundError: ako atribut ne postoji
         """
-        raise NotImplementedError
+        if name not in self._attributes:
+            raise AttributeNotFoundError(f"Element '{self._id}' nema atribut '{name}'.")
+        return self._attributes[name]
 
     def set_attribute(self, name: str, value: AttributeValue) -> None:
         """
@@ -77,7 +86,7 @@ class GraphElement:
         :type value: AttributeValue
         :raises InvalidAttributeTypeError: ako vrednost nije dozvoljenog tipa
         """
-        raise NotImplementedError
+        self._attributes[name] = value
 
     def remove_attribute(self, name: str) -> None:
         """
@@ -85,4 +94,22 @@ class GraphElement:
         :type name: str
         :raises AttributeNotFoundError: ako atribut ne postoji
         """
-        raise NotImplementedError
+        if name not in self._attributes:
+            raise AttributeNotFoundError(f"Element '{self._id}' nema atribut '{name}'.")
+        del self._attributes[name]
+
+    def __eq__(self, other: object) -> bool:
+        """
+        Dva elementa su jednaka ako su istog tipa i imaju isti id
+        Atributi se ne porede - cvor sa id-jem "1" je isti cvor bez obzira na vrednosti atributa
+        """
+        return type(self) is type(other) and self._id == other._id
+
+    def __hash__(self) -> int:
+        """Hash se racuna iz tipa i id-ja, u skladu sa __eq__,
+         da bi element mogao biti u skupu ili kljuc recnika"""
+        return hash((type(self), self._id))
+
+    def __repr__(self) -> str:
+        """Tekstualni prikaz za ispis i debagovanje, npr. Node(id='1', attributes={'name': 'Alice'})"""
+        return f"{type(self).__name__}(id={self._id!r}, attributes={self._attributes!r})"
