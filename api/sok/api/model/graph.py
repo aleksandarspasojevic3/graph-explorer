@@ -1,12 +1,14 @@
 """Graf: skup cvorova i grana"""
 
-from typing import Dict, Iterable, List
+from collections import deque
+from typing import Dict, Iterable, List, Set
 
 from .edge import Edge
 from .exceptions import (
     DuplicateEdgeError,
     DuplicateNodeError,
     EdgeNotFoundError,
+    NodeHasEdgesError,
     NodeNotFoundError,
 )
 from .node import Node
@@ -104,7 +106,13 @@ class Graph:
         :raises NodeNotFoundError: ako cvor ne postoji
         :raises NodeHasEdgesError: ako je cvor povezan bar jednom granom
         """
-        raise NotImplementedError
+        self.get_node(node_id)
+        edges = self.edges_of(node_id)
+        if edges:
+            raise NodeHasEdgesError(
+                f"Cvor '{node_id}' ne moze da se obrise jer ima {len(edges)} grana. "
+                f"Prvo obrisite grane: {', '.join(edge.id for edge in edges)}.")
+        del self._nodes[node_id]
 
     # --- Grane ---
 
@@ -150,7 +158,8 @@ class Graph:
         :type edge_id: str
         :raises EdgeNotFoundError: ako grana ne postoji
         """
-        raise NotImplementedError
+        self.get_edge(edge_id)
+        del self._edges[edge_id]
 
     # --- Susedstvo ---
 
@@ -164,7 +173,9 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values()
+                if edge.source.id == node_id or edge.target.id == node_id]
 
     def outgoing_edges(self, node_id: str) -> List[Edge]:
         """
@@ -176,7 +187,10 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        if not self._directed:
+            return self.edges_of(node_id)
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values() if edge.source.id == node_id]
 
     def incoming_edges(self, node_id: str) -> List[Edge]:
         """
@@ -188,7 +202,10 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        if not self._directed:
+            return self.edges_of(node_id)
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values() if edge.target.id == node_id]
 
     def neighbors(self, node_id: str) -> List[Node]:
         """
@@ -201,7 +218,14 @@ class Graph:
         :rtype: List[Node]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        neighbors: List[Node] = []
+        seen = set()
+        for edge in self.outgoing_edges(node_id):
+            other = edge.target if edge.source.id == node_id else edge.source
+            if other.id not in seen:
+                seen.add(other.id)
+                neighbors.append(other)
+        return neighbors
 
     # --- Ceo graf metode ---
 
@@ -218,11 +242,20 @@ class Graph:
         :return: novi graf
         :rtype: Graph
         """
-        raise NotImplementedError
+        ids = set(node_ids)
+        result = Graph(directed=self._directed)
+        for node in self._nodes.values():
+            if node.id in ids:
+                result.add_node(node)
+        for edge in self._edges.values():
+            if edge.source.id in ids and edge.target.id in ids:
+                result.add_edge(edge)
+        return result
 
     def clear(self) -> None:
         """Brise sve cvorove i grane iz grafa"""
-        raise NotImplementedError
+        self._nodes.clear()
+        self._edges.clear()
 
     def is_connected(self) -> bool:
         """
@@ -232,7 +265,7 @@ class Graph:
 
         :rtype: bool
         """
-        raise NotImplementedError
+        return self._count_components() <= 1
 
     def has_cycle(self) -> bool:
         """
@@ -244,4 +277,52 @@ class Graph:
 
         :rtype: bool
         """
-        raise NotImplementedError
+        if self._directed:
+            return self._has_directed_cycle()
+        return len(self._edges) > len(self._nodes) - self._count_components()
+
+    def _undirected_adjacency(self) -> Dict[str, Set[str]]:
+        """Pomocna metoda: za svaki cvor vraca skup id-jeva suseda, pri cemu se smer grana zanemaruje"""
+        adjacency: Dict[str, Set[str]] = {node_id: set() for node_id in self._nodes}
+        for edge in self._edges.values():
+            adjacency[edge.source.id].add(edge.target.id)
+            adjacency[edge.target.id].add(edge.source.id)
+        return adjacency
+
+    def _count_components(self) -> int:
+        """Pomocna metoda: broj komponenti povezanosti grafa, pri cemu se smer grana zanemaruje"""
+        adjacency = self._undirected_adjacency()
+        visited: Set[str] = set()
+        components = 0
+        for start in self._nodes:
+            if start in visited:
+                continue
+            components += 1
+            visited.add(start)
+            queue = deque([start])
+            while queue:
+                current = queue.popleft()
+                for neighbor in adjacency[current]:
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append(neighbor)
+        return components
+
+    def _has_directed_cycle(self) -> bool:
+        """Pomocna metoda - provera ciklusa u usmerenom grafu (Kahn-ov algoritam)"""
+        in_degree: Dict[str, int] = {node_id: 0 for node_id in self._nodes}
+        successors: Dict[str, List[str]] = {node_id: [] for node_id in self._nodes}
+        for edge in self._edges.values():
+            in_degree[edge.target.id] += 1
+            successors[edge.source.id].append(edge.target.id)
+
+        queue = deque(node_id for node_id, degree in in_degree.items() if degree == 0)
+        removed = 0
+        while queue:
+            current = queue.popleft()
+            removed += 1
+            for successor in successors[current]:
+                in_degree[successor] -= 1
+                if in_degree[successor] == 0:
+                    queue.append(successor)
+        return removed < len(self._nodes)
