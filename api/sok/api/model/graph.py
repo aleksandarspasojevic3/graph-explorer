@@ -7,6 +7,7 @@ from .exceptions import (
     DuplicateEdgeError,
     DuplicateNodeError,
     EdgeNotFoundError,
+    NodeHasEdgesError,
     NodeNotFoundError,
 )
 from .node import Node
@@ -104,7 +105,13 @@ class Graph:
         :raises NodeNotFoundError: ako cvor ne postoji
         :raises NodeHasEdgesError: ako je cvor povezan bar jednom granom
         """
-        raise NotImplementedError
+        self.get_node(node_id)
+        edges = self.edges_of(node_id)
+        if edges:
+            raise NodeHasEdgesError(
+                f"Cvor '{node_id}' ne moze da se obrise jer ima {len(edges)} grana. "
+                f"Prvo obrisite grane: {', '.join(edge.id for edge in edges)}.")
+        del self._nodes[node_id]
 
     # --- Grane ---
 
@@ -150,7 +157,8 @@ class Graph:
         :type edge_id: str
         :raises EdgeNotFoundError: ako grana ne postoji
         """
-        raise NotImplementedError
+        self.get_edge(edge_id)
+        del self._edges[edge_id]
 
     # --- Susedstvo ---
 
@@ -164,7 +172,9 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values()
+                if edge.source.id == node_id or edge.target.id == node_id]
 
     def outgoing_edges(self, node_id: str) -> List[Edge]:
         """
@@ -176,7 +186,10 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        if not self._directed:
+            return self.edges_of(node_id)
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values() if edge.source.id == node_id]
 
     def incoming_edges(self, node_id: str) -> List[Edge]:
         """
@@ -188,7 +201,10 @@ class Graph:
         :rtype: List[Edge]
         :raises NodeNotFoundError: ako cvor ne postoji
         """
-        raise NotImplementedError
+        if not self._directed:
+            return self.edges_of(node_id)
+        self.get_node(node_id)
+        return [edge for edge in self._edges.values() if edge.target.id == node_id]
 
     def neighbors(self, node_id: str) -> List[Node]:
         """
@@ -222,7 +238,8 @@ class Graph:
 
     def clear(self) -> None:
         """Brise sve cvorove i grane iz grafa"""
-        raise NotImplementedError
+        self._nodes.clear()
+        self._edges.clear()
 
     def is_connected(self) -> bool:
         """
