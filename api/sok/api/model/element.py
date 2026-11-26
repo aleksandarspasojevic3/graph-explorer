@@ -4,7 +4,7 @@ from datetime import date
 from types import MappingProxyType
 from typing import Dict, Mapping, Optional, Union
 
-from .exceptions import AttributeNotFoundError
+from .exceptions import AttributeNotFoundError, InvalidAttributeTypeError
 
 AttributeValue = Union[int, float, str, date]
 """Dozvoljeni tipovi vrednosti atributa
@@ -86,6 +86,10 @@ class GraphElement:
         :type value: AttributeValue
         :raises InvalidAttributeTypeError: ako vrednost nije dozvoljenog tipa
         """
+        if isinstance(value, bool) or not isinstance(value, ALLOWED_ATTRIBUTE_TYPES):
+            raise InvalidAttributeTypeError(
+                f"Atribut '{name}' elementa '{self._id}' ima nedozvoljen tip "
+                f"'{type(value).__name__}'. Dozvoljeni tipovi su int, float, str i date.")
         self._attributes[name] = value
 
     def remove_attribute(self, name: str) -> None:
