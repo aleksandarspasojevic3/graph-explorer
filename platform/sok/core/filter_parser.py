@@ -1,13 +1,4 @@
-"""Parser upita za filtriranje grafa
-
-Upit je oblika "<atribut> <komparator> <vrednost>", npr. "age >= 25"
-Razmaci oko komparatora nisu obavezni ("age>=25"), a vrednost moze
-sadrzati razmake ("name == Alice Smith")
-
-Parser samo deli tekst na tri dela, vrednost ostaje string
-Pretvaranje vrednosti u tip atributa radi filter, jer tek on zna kog je
-tipa atribut cvora
-"""
+"""Parser upita za filter"""
 
 import re
 from dataclasses import dataclass
@@ -15,39 +6,28 @@ from dataclasses import dataclass
 from .exceptions import InvalidQueryError
 
 COMPARATORS = ("==", "!=", ">=", "<=", ">", "<")
-"""Dozvoljeni komparatori
-Dvoznakovni su ispred jednoznakovnih, da bi se >= prepoznao pre >"""
+"""Dozvoljeni komparatori, dvoznakovni su prvi da se >= prepozna pre >"""
 
+# atribut bez razmaka, komparator, vrednost koja ne pocinje znakom komparatora
 _FILTER_PATTERN = re.compile(
     r"\s*(?P<attribute>[^\s=!<>]+)"
     r"\s*(?P<operator>==|!=|>=|<=|>|<)"
     r"\s*(?P<value>[^\s=!<>].*?)\s*")
-"""Regularni izraz za upit filtera:
-    attribute - naziv atributa, bez razmaka i znakova komparatora
-    operator - jedan od komparatora, dvoznakovni se proveravaju prvi
-    value - sve do kraja upita, ne sme poceti znakom komparatora
-    (tako se "age >== 25" odbija umesto da vrednost bude "= 25")
-Razmaci na pocetku, oko komparatora i na kraju se zanemaruju"""
 
 
 @dataclass(frozen=True)
 class FilterQuery:
     """
-    Rezultat parsiranja upita za filter
-    Objekat se ne moze menjati posle pravljenja (frozen)
+    Upit za filter podeljen na atribut, komparator i vrednost
+    Vrednost ostaje string, u tip atributa je pretvara filter
 
     Primer::
         FilterQuery(attribute="age", operator=">=", value="25")
     """
 
     attribute: str
-    """naziv atributa cvora, npr. age"""
-
     operator: str
-    """komparator, jedan od COMPARATORS"""
-
     value: str
-    """vrednost iz upita kao string, npr. 25"""
 
 
 def parse_filter(query: str) -> FilterQuery:
